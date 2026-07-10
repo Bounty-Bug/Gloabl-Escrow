@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Escrow platform API with OKX wallet integration and Gmail notifications
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: escrows
+    description: Escrow transactions
+  - name: crypto
+    description: Crypto wallet and currency operations
+  - name: stats
+    description: Dashboard statistics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +29,442 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /escrows:
+    get:
+      operationId: listEscrows
+      tags: [escrows]
+      summary: List all escrow transactions
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of escrows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Escrow"
+    post:
+      operationId: createEscrow
+      tags: [escrows]
+      summary: Create a new escrow transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowInput"
+      responses:
+        "201":
+          description: Escrow created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "400":
+          description: Validation error
+
+  /escrows/{id}:
+    get:
+      operationId: getEscrow
+      tags: [escrows]
+      summary: Get a single escrow by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Escrow details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateEscrow
+      tags: [escrows]
+      summary: Update escrow details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowPatch"
+      responses:
+        "200":
+          description: Updated escrow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "404":
+          description: Not found
+
+  /escrows/{id}/fund:
+    post:
+      operationId: fundEscrow
+      tags: [escrows]
+      summary: Mark escrow as funded (buyer confirms payment sent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowFundInput"
+      responses:
+        "200":
+          description: Escrow funded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "400":
+          description: Invalid state transition
+        "404":
+          description: Not found
+
+  /escrows/{id}/release:
+    post:
+      operationId: releaseEscrow
+      tags: [escrows]
+      summary: Release funds to seller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowActionInput"
+      responses:
+        "200":
+          description: Escrow released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "400":
+          description: Invalid state transition
+        "404":
+          description: Not found
+
+  /escrows/{id}/dispute:
+    post:
+      operationId: disputeEscrow
+      tags: [escrows]
+      summary: Raise a dispute on the escrow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowActionInput"
+      responses:
+        "200":
+          description: Dispute raised
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "400":
+          description: Invalid state transition
+        "404":
+          description: Not found
+
+  /escrows/{id}/cancel:
+    post:
+      operationId: cancelEscrow
+      tags: [escrows]
+      summary: Cancel the escrow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowActionInput"
+      responses:
+        "200":
+          description: Escrow cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escrow"
+        "400":
+          description: Invalid state transition
+        "404":
+          description: Not found
+
+  /currencies:
+    get:
+      operationId: listCurrencies
+      tags: [crypto]
+      summary: List available currencies and their networks from OKX
+      responses:
+        "200":
+          description: Currency list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CurrencyInfo"
+
+  /wallets/address:
+    get:
+      operationId: getDepositAddress
+      tags: [crypto]
+      summary: Get deposit wallet address for a currency and network from OKX
+      parameters:
+        - name: currency
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: chain
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deposit address info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WalletAddress"
+        "400":
+          description: Missing currency parameter
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [stats]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EscrowStats"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    Escrow:
+      type: object
+      required:
+        - id
+        - title
+        - buyerEmail
+        - sellerEmail
+        - amount
+        - currency
+        - network
+        - walletAddress
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        buyerEmail:
+          type: string
+        sellerEmail:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        network:
+          type: string
+        walletAddress:
+          type: string
+        status:
+          type: string
+          enum: [pending, funded, released, disputed, cancelled, completed]
+        txHash:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EscrowInput:
+      type: object
+      required:
+        - title
+        - buyerEmail
+        - sellerEmail
+        - amount
+        - currency
+        - network
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        buyerEmail:
+          type: string
+        sellerEmail:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        network:
+          type: string
+
+    EscrowPatch:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        notes:
+          type: string
+
+    EscrowFundInput:
+      type: object
+      required: [txHash]
+      properties:
+        txHash:
+          type: string
+        notes:
+          type: string
+
+    EscrowActionInput:
+      type: object
+      properties:
+        notes:
+          type: string
+
+    CurrencyInfo:
+      type: object
+      required: [currency, name, chain, minDepositAmt, depositQuotaFixed]
+      properties:
+        currency:
+          type: string
+        name:
+          type: string
+        chain:
+          type: string
+        minDepositAmt:
+          type: string
+        depositQuotaFixed:
+          type: string
+        logoLink:
+          type: ["string", "null"]
+
+    WalletAddress:
+      type: object
+      required: [addr, currency, chain, memo]
+      properties:
+        addr:
+          type: string
+        currency:
+          type: string
+        chain:
+          type: string
+        memo:
+          type: ["string", "null"]
+        pmtId:
+          type: ["string", "null"]
+
+    EscrowStats:
+      type: object
+      required:
+        - total
+        - pending
+        - funded
+        - released
+        - disputed
+        - cancelled
+        - totalVolumeByCurrency
+        - recentActivity
+      properties:
+        total:
+          type: integer
+        pending:
+          type: integer
+        funded:
+          type: integer
+        released:
+          type: integer
+        disputed:
+          type: integer
+        cancelled:
+          type: integer
+        totalVolumeByCurrency:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolumeEntry"
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Escrow"
+
+    VolumeEntry:
+      type: object
+      required: [currency, total]
+      properties:
+        currency:
+          type: string
+        total:
+          type: string

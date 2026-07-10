@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Escrow Platform"
+version = "1.0.0"
+id = "artifacts/escrow-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22614
+
+[services.development]
+run = "pnpm --filter @workspace/escrow-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/escrow-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/escrow-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22614"
+BASE_PATH = "/"
