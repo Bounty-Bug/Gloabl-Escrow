@@ -4,7 +4,34 @@ import { Shell } from "@/components/layout/Shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Link } from "wouter"
-import { ArrowRight, AlertCircle, CheckCircle2, Clock, ShieldCheck, Activity } from "lucide-react"
+import { ArrowRight, AlertCircle, CheckCircle2, Clock, ShieldCheck, Activity, TrendingUp, DollarSign } from "lucide-react"
+
+function StatCard({ title, value, icon: Icon, color = "text-slate-400" }: {
+  title: string; value: React.ReactNode; icon: React.ElementType; color?: string
+}) {
+  return (
+    <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-slate-500">{title}</span>
+          <div className={`w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center`}>
+            <Icon className={`w-4 h-4 ${color}`} />
+          </div>
+        </div>
+        <div className="text-3xl font-bold text-slate-900">{value}</div>
+      </CardContent>
+    </Card>
+  )
+}
+
+const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; badge: any }> = {
+  completed: { color: "text-emerald-600", icon: CheckCircle2, badge: "success" },
+  released:  { color: "text-blue-600",    icon: ShieldCheck,  badge: "primary" },
+  funded:    { color: "text-amber-600",   icon: Activity,     badge: "warning" },
+  pending:   { color: "text-slate-400",   icon: Clock,        badge: "secondary" },
+  disputed:  { color: "text-red-500",     icon: AlertCircle,  badge: "destructive" },
+  cancelled: { color: "text-red-400",     icon: AlertCircle,  badge: "destructive" },
+}
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useGetStats()
@@ -13,16 +40,13 @@ export default function Dashboard() {
     return (
       <Shell>
         <div className="space-y-6">
-          <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="h-8 w-52 bg-slate-200 rounded-lg animate-pulse" />
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 w-16 bg-muted rounded animate-pulse mb-2" />
-                  <div className="h-3 w-32 bg-muted rounded animate-pulse" />
+              <Card key={i} className="bg-white border-slate-200">
+                <CardContent className="p-5">
+                  <div className="h-4 w-24 bg-slate-200 rounded animate-pulse mb-3" />
+                  <div className="h-8 w-16 bg-slate-200 rounded animate-pulse" />
                 </CardContent>
               </Card>
             ))}
@@ -34,155 +58,104 @@ export default function Dashboard() {
 
   if (!stats) return null
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'success'
-      case 'released': return 'primary'
-      case 'funded': return 'warning'
-      case 'pending': return 'secondary'
-      case 'disputed': return 'destructive'
-      case 'cancelled': return 'destructive'
-      default: return 'default'
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle2 className="w-4 h-4 text-success" />
-      case 'released': return <ShieldCheck className="w-4 h-4 text-primary" />
-      case 'funded': return <Activity className="w-4 h-4 text-warning" />
-      case 'pending': return <Clock className="w-4 h-4 text-muted-foreground" />
-      case 'disputed': return <AlertCircle className="w-4 h-4 text-destructive" />
-      default: return <Clock className="w-4 h-4 text-muted-foreground" />
-    }
-  }
-
   return (
     <Shell>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-          <p className="text-muted-foreground mt-1">
-            Platform metrics and recent escrow activity.
-          </p>
+      <div className="space-y-6 sm:space-y-8">
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+            <p className="text-slate-500 text-sm mt-1">Platform overview and recent activity</p>
+          </div>
+          <Link href="/escrows/new"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors self-start sm:self-auto">
+            + New Escrow
+          </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Escrows</CardTitle>
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pending}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Funded / Active</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.funded}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Released / Completed</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.released}</div>
-            </CardContent>
-          </Card>
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Escrows"        value={stats.total}    icon={ShieldCheck} color="text-blue-600" />
+          <StatCard title="Pending"              value={stats.pending}  icon={Clock}       color="text-slate-400" />
+          <StatCard title="Funded / Active"      value={stats.funded}   icon={Activity}    color="text-amber-500" />
+          <StatCard title="Released"             value={stats.released} icon={CheckCircle2} color="text-emerald-600" />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
-            <CardHeader>
-              <CardTitle>Volume by Currency</CardTitle>
+        {/* Volume + Activity */}
+        <div className="grid gap-6 lg:grid-cols-5">
+
+          {/* Volume by currency */}
+          <Card className="lg:col-span-2 bg-white border-slate-200 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-600" /> Volume by Asset
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {stats.totalVolumeByCurrency.map((vol) => (
-                  <div key={vol.currency} className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center font-bold mr-4">
-                      {vol.currency}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        Total Processing
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Across all statuses
-                      </p>
-                    </div>
-                    <div className="font-mono font-medium">
-                      {vol.total}
-                    </div>
+            <CardContent className="space-y-3">
+              {stats.totalVolumeByCurrency.length === 0 ? (
+                <p className="text-center py-6 text-sm text-slate-400">No volume data yet.</p>
+              ) : stats.totalVolumeByCurrency.map((vol) => (
+                <div key={vol.currency} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-sm flex-shrink-0">
+                    {vol.currency.substring(0, 3)}
                   </div>
-                ))}
-                {stats.totalVolumeByCurrency.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No volume data available.
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-slate-900">{vol.currency}</div>
+                    <div className="text-xs text-slate-400">Total processed</div>
                   </div>
-                )}
-              </div>
+                  <div className="font-mono text-sm font-semibold text-slate-900 text-right">
+                    {parseFloat(vol.total).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
-          <Card className="col-span-3">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+          {/* Recent Activity */}
+          <Card className="lg:col-span-3 bg-white border-slate-200 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-600" /> Recent Activity
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {stats.recentActivity.map((escrow) => (
-                  <div key={escrow.id} className="flex items-start justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        {getStatusIcon(escrow.status)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium leading-none mb-1">
-                          {escrow.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {escrow.buyerEmail} &rarr; {escrow.sellerEmail}
-                        </p>
-                        <Badge variant={getStatusColor(escrow.status) as any} className="capitalize text-[10px] px-1.5 py-0">
-                          {escrow.status}
-                        </Badge>
+            <CardContent className="space-y-1 p-4 pt-0">
+              {stats.recentActivity.length === 0 ? (
+                <p className="text-center py-6 text-sm text-slate-400">No activity yet.</p>
+              ) : stats.recentActivity.map((escrow) => {
+                const cfg = STATUS_CONFIG[escrow.status] ?? STATUS_CONFIG.pending
+                const Icon = cfg.icon
+                return (
+                  <Link key={escrow.id} href={`/escrows/${escrow.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                    <div className={`w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0`}>
+                      <Icon className={`w-4 h-4 ${cfg.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-slate-900 truncate">{escrow.title}</div>
+                      <div className="text-xs text-slate-400 truncate">
+                        {escrow.buyerEmail} → {escrow.sellerEmail}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="font-mono text-sm font-medium">
-                        {escrow.amount} {escrow.currency}
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className="font-mono text-sm font-semibold text-slate-900">
+                        {parseFloat(escrow.amount).toLocaleString(undefined, { maximumFractionDigits: 4 })} {escrow.currency}
                       </div>
-                      <Link 
-                        href={`/escrows/${escrow.id}`}
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                      >
-                        View <ArrowRight className="w-3 h-3" />
-                      </Link>
+                      <Badge variant={cfg.badge as any} className="capitalize text-[10px] px-1.5 py-0 h-4">
+                        {escrow.status}
+                      </Badge>
                     </div>
-                  </div>
-                ))}
-                {stats.recentActivity.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No recent activity.
-                  </div>
-                )}
-              </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors ml-1 flex-shrink-0" />
+                  </Link>
+                )
+              })}
+              {stats.recentActivity.length > 0 && (
+                <div className="pt-2 border-t border-slate-100 mt-2">
+                  <Link href="/escrows" className="flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                    View all escrows <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
