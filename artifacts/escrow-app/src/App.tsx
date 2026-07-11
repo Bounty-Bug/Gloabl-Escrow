@@ -13,6 +13,7 @@ import EscrowsList from "@/pages/escrows/index";
 import NewEscrow from "@/pages/escrows/new";
 import EscrowDetail from "@/pages/escrows/[id]";
 import WalletsList from "@/pages/wallets";
+import AdminPage from "@/pages/admin";
 
 const queryClient = new QueryClient();
 
@@ -215,6 +216,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/wallets">
               {() => <Protected component={WalletsList} />}
             </Route>
+            {/* Admin — not linked from the UI; self-authenticates via ADMIN_SECRET key */}
+            <Route path="/admin" component={AdminPage} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

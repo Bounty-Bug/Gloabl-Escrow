@@ -88,7 +88,7 @@ export default function EscrowsList() {
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-slate-400 truncate max-w-[55%]">{escrow.buyerEmail}</div>
                     <div className="font-mono text-sm font-bold text-slate-900">
-                      {parseFloat(escrow.amount).toLocaleString(undefined, { maximumFractionDigits: 6 })} {escrow.currency}
+                      {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {escrow.currency}
                     </div>
                   </div>
                   <div className="text-xs text-slate-300 mt-1">#{escrow.id}</div>
@@ -143,7 +143,7 @@ export default function EscrowsList() {
                     <div className="truncate">↓ {escrow.sellerEmail}</div>
                   </div>
                   <div className="font-mono text-sm font-semibold text-slate-900">
-                    {parseFloat(escrow.amount).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                    {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     <span className="text-slate-400 font-normal ml-1">{escrow.currency}</span>
                   </div>
                   <div>

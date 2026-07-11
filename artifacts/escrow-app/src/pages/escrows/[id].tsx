@@ -377,7 +377,7 @@ export default function EscrowDetail() {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-4xl font-extrabold font-mono">
-                    {parseFloat(escrow.amount).toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                    {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   <span className="text-xl font-semibold opacity-75">{escrow.currency}</span>
                 </div>

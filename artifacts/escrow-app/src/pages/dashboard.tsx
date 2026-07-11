@@ -105,7 +105,7 @@ export default function Dashboard() {
                     <div className="text-xs text-slate-400">Total processed</div>
                   </div>
                   <div className="font-mono text-sm font-semibold text-slate-900 text-right">
-                    {parseFloat(vol.total).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    {parseFloat(vol.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               ))}
@@ -139,7 +139,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       <div className="font-mono text-sm font-semibold text-slate-900">
-                        {parseFloat(escrow.amount).toLocaleString(undefined, { maximumFractionDigits: 4 })} {escrow.currency}
+                        {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {escrow.currency}
                       </div>
                       <Badge variant={cfg.badge as any} className="capitalize text-[10px] px-1.5 py-0 h-4">
                         {escrow.status}
