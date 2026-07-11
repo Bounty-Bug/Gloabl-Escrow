@@ -27,6 +27,8 @@ export const escrowsTable = pgTable("escrows", {
   status: text("status").notNull().default("pending"),
   txHash: text("tx_hash"),
   notes: text("notes"),
+  fundedAt: timestamp("funded_at", { withTimezone: true }),
+  payoutWallet: text("payout_wallet"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

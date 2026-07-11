@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { requireAuth } from "../middlewares/requireAuth";
 import healthRouter from "./health";
 import escrowsRouter from "./escrows";
+import messagesRouter from "./messages";
 import cryptoRouter from "./crypto";
 import statsRouter from "./stats";
 import adminRouter from "./admin";
@@ -17,6 +18,7 @@ router.use(adminRouter);
 // All other routes require a valid Clerk session
 router.use(requireAuth);
 router.use(escrowsRouter);
+router.use(messagesRouter);
 router.use(cryptoRouter);
 router.use(statsRouter);
 

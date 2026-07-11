@@ -298,6 +298,7 @@ router.post("/escrows/:id/fund", async (req, res): Promise<void> => {
       status: "funded",
       txHash: parsed.data.txHash,
       notes: parsed.data.notes ?? undefined,
+      fundedAt: new Date(),
     })
     .where(
       and(
@@ -480,6 +481,59 @@ router.post("/escrows/:id/cancel", async (req, res): Promise<void> => {
 
   sendEscrowCancelled(escrow).catch((err) => req.log.error({ err }, "Email error"));
   res.json(escrow);
+});
+
+// POST /escrows/:id/withdraw — seller records their payout wallet to request withdrawal
+router.post("/escrows/:id/withdraw", async (req, res): Promise<void> => {
+  const escrowId = parseInt(req.params.id, 10);
+  if (isNaN(escrowId)) {
+    res.status(400).json({ error: "Invalid escrow id" });
+    return;
+  }
+
+  const parsed = z.object({ payoutWallet: z.string().min(10).max(200) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "payoutWallet must be a valid wallet address (10–200 chars)" });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const userEmail = await getUserEmail(userId);
+
+  // Only the seller can request withdrawal
+  const [escrow] = await db
+    .select()
+    .from(escrowsTable)
+    .where(eq(escrowsTable.id, escrowId));
+
+  if (!escrow) {
+    res.status(404).json({ error: "Escrow not found" });
+    return;
+  }
+
+  if (!userEmail || escrow.sellerEmail.toLowerCase() !== userEmail.toLowerCase()) {
+    res.status(403).json({ error: "Only the seller can request a withdrawal" });
+    return;
+  }
+
+  if (escrow.status !== "released") {
+    res.status(409).json({ error: "Funds can only be withdrawn after the escrow is released" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(escrowsTable)
+    .set({ payoutWallet: parsed.data.payoutWallet })
+    .where(eq(escrowsTable.id, escrowId))
+    .returning();
+
+  req.log.info({ escrowId, sellerEmail: escrow.sellerEmail }, "Withdrawal requested");
+  res.json(updated);
 });
 
 export default router;
