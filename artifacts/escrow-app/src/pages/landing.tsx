@@ -116,14 +116,14 @@ export default function Landing() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <Link href="/dashboard">
+              <Link href="/sign-in">
                 <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900">
-                  Dashboard
+                  Sign In
                 </Button>
               </Link>
-              <Link href="/escrows/new">
+              <Link href="/sign-up">
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
-                  Start Escrow <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  Get Started <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </Link>
             </div>
@@ -147,12 +147,12 @@ export default function Landing() {
               </a>
             ))}
             <div className="pt-2 border-t border-slate-100 space-y-2">
-              <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
-                <Button variant="outline" className="w-full justify-center">Dashboard</Button>
+              <Link href="/sign-in" onClick={() => setMobileOpen(false)}>
+                <Button variant="outline" className="w-full justify-center">Sign In</Button>
               </Link>
-              <Link href="/escrows/new" onClick={() => setMobileOpen(false)}>
+              <Link href="/sign-up" onClick={() => setMobileOpen(false)}>
                 <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white">
-                  Start Escrow
+                  Get Started
                 </Button>
               </Link>
             </div>
@@ -184,7 +184,7 @@ export default function Landing() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/escrows/new">
+            <Link href="/sign-up">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200 px-8 h-12 text-base font-semibold w-full sm:w-auto">
                 Create Your First Escrow <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -378,14 +378,14 @@ export default function Landing() {
             Start your first escrow in minutes. No account needed — just create the deal, share the link, and we handle the rest.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/escrows/new">
+            <Link href="/sign-up">
               <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-10 h-12 w-full sm:w-auto shadow-xl">
                 Create Escrow — It's Free
               </Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/sign-in">
               <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 font-semibold px-10 h-12 w-full sm:w-auto">
-                View Dashboard
+                Sign In
               </Button>
             </Link>
           </div>
@@ -411,7 +411,8 @@ export default function Landing() {
               {NAV_LINKS.map(l => (
                 <a key={l.label} href={l.href} className="hover:text-white transition-colors">{l.label}</a>
               ))}
-              <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+              <Link href="/sign-in" className="hover:text-white transition-colors">Sign In</Link>
+              <Link href="/sign-up" className="hover:text-white transition-colors">Sign Up</Link>
             </div>
             <div className="text-xs text-slate-500 text-center sm:text-right">
               © {new Date().getFullYear()} Escrow Global. All rights reserved.

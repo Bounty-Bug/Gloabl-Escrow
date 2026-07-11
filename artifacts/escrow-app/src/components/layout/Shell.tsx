@@ -1,8 +1,11 @@
 import * as React from "react"
 import { Link, useLocation } from "wouter"
+import { useUser, useClerk } from "@clerk/react"
 import {
-  Globe, LayoutDashboard, List, Wallet, Plus, Menu, X, ChevronRight, ArrowLeft
+  Globe, LayoutDashboard, List, Wallet, Plus, Menu, X, ChevronRight, ArrowLeft, LogOut, User
 } from "lucide-react"
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,6 +17,8 @@ const NAV = [
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const { user } = useUser()
+  const { signOut } = useClerk()
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return location === "/dashboard"
@@ -21,6 +26,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (href === "/escrows/new") return location === "/escrows/new"
     if (href === "/wallets") return location === "/wallets"
     return location.startsWith(href)
+  }
+
+  const handleSignOut = () => {
+    signOut({ redirectUrl: basePath || "/" })
   }
 
   const NavLink = ({ href, label, icon: Icon }: typeof NAV[0]) => {
@@ -43,7 +52,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full bg-slate-50">
-      
+
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -61,17 +70,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
 
-        {/* Logo area */}
+        {/* Logo */}
         <div className="p-5 flex items-center justify-between border-b border-slate-800">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:bg-blue-500 transition-colors">
               <Globe className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <span className="text-base font-bold tracking-tight text-white">
-                Escrow<span className="text-blue-400">Global</span>
-              </span>
-            </div>
+            <span className="text-base font-bold tracking-tight text-white">
+              Escrow<span className="text-blue-400">Global</span>
+            </span>
           </Link>
           <button
             className="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -89,9 +96,34 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {NAV.map(item => <NavLink key={item.href} {...item} />)}
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-800">
-          <Link href="/" className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors rounded-lg hover:bg-slate-800">
+        {/* User section */}
+        <div className="p-4 border-t border-slate-800 space-y-1">
+          {user && (
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl">
+              {user.imageUrl ? (
+                <img src={user.imageUrl} alt={user.fullName ?? "User"} className="w-7 h-7 rounded-full flex-shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <User className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-white truncate">
+                  {user.fullName || user.primaryEmailAddress?.emailAddress?.split("@")[0]}
+                </div>
+                <div className="text-[10px] text-slate-500 truncate">
+                  {user.primaryEmailAddress?.emailAddress}
+                </div>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors rounded-xl"
+          >
+            <LogOut className="w-3.5 h-3.5" /> Sign out
+          </button>
+          <Link href="/" className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:text-slate-400 transition-colors rounded-xl hover:bg-slate-800">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to home
           </Link>
         </div>
@@ -103,15 +135,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {/* Top bar */}
         <header className="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Mobile hamburger */}
             <button
               className="lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="w-5 h-5" />
             </button>
-
-            {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm">
               <span className="text-slate-400 hidden sm:inline">EscrowGlobal</span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-300 hidden sm:inline" />
@@ -127,6 +156,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            {user && (
+              <div className="hidden sm:flex items-center gap-2 text-sm text-slate-500">
+                {user.imageUrl ? (
+                  <img src={user.imageUrl} alt="" className="w-7 h-7 rounded-full" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-blue-600" />
+                  </div>
+                )}
+                <span className="text-slate-600 font-medium max-w-[140px] truncate">
+                  {user.primaryEmailAddress?.emailAddress}
+                </span>
+              </div>
+            )}
             <Link href="/escrows/new">
               <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
                 <Plus className="w-3.5 h-3.5" /> New Escrow

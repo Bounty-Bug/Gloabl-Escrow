@@ -1,6 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Clerk layer must be declared before @import 'tailwindcss' on Tailwind v4 */
+@layer theme, base, clerk, components, utilities;
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import '@clerk/themes/shadcn.css';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -74,7 +79,6 @@
 }
 
 :root {
-  /* LIGHT THEME — Clean professional fintech */
   --background: 210 20% 98%;
   --foreground: 222 47% 11%;
 
@@ -117,7 +121,6 @@
   --chart-4: 0 84% 60%;
   --chart-5: 270 70% 60%;
 
-  /* Sidebar — dark navy for contrast and professionalism */
   --sidebar: 222 47% 10%;
   --sidebar-foreground: 215 20% 60%;
   --sidebar-border: 217 33% 16%;
@@ -143,22 +146,17 @@
   }
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  @apply bg-transparent;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full;
-}
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/30;
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
+::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/30; }
+
+/* Clerk placeholder color fix */
+.cl-formFieldInput::placeholder {
+  color: #94a3b8;
+  opacity: 1;
 }

@@ -1,2 +1,3 @@
 - [Routing structure](routing.md) — `/` = landing page, `/dashboard` = app dashboard; all inner routes under Shell use dark-navy sidebar.
 - [OKX IP whitelist](okx-ip.md) — server IP must be whitelisted in OKX API key settings; current dev IP changes on restarts, causing 401 errors; use mock fallback only for currencies, not wallet addresses.
+- [Clerk auth setup](clerk-auth.md) — Replit-managed Clerk wired up; all /api routes (except /api/health) require auth; key patterns and pitfalls documented.
