@@ -1,0 +1,43 @@
+Selling a freelance account (like Upwork, Fiverr, or Freelancer) adds a layer of complexity to a standard online sale because you aren't just shipping a physical item; you are handing over digital keys, financial details, and reputation history.
+
+An escrow service acts as a neutral third party that locks up the buyer's money until they confirm they have full, secure ownership of the account. It prevents the buyer from taking your account and running, and it prevents you from taking their money without handing over the login details.
+
+Here is exactly how the process plays out step-by-step for a digital account sale.
+
+---
+
+## The Step-by-Step Escrow Process
+
+1. **Agree on Terms & Timeline:** Setting Boundaries.
+You and the buyer agree on the price, who pays the escrow fee (usually between 3% to 6%), and the **Inspection Period** (typically 3 to 7 days). The inspection period is crucial—it's the time the buyer gets to verify the account details before the money is released.
+
+
+2. **Initiate the Escrow Transaction:** Creating the Contract.
+One of you creates the transaction on a licensed platform (like Escrow.com). You will specify that the item is a "Digital Service" or "Website/Account Transfer" and input the agreed terms.
+
+
+3. **The Buyer Deposits the Funds:** Securing the Money.
+The buyer transfers the full purchase price to the escrow platform. **Do not hand over any login info until the escrow platform explicitly changes the status to "Funds Secured" or "Paid."**
+
+
+4. **Transfer Account Ownership:** The Handover.
+Once the platform confirms they have the money, you change the account's primary email, password, two-factor authentication (2FA), and linked payment/payout methods to the buyer's details. You then mark the item as "Delivered" on the escrow dashboard.
+
+
+5. **The Inspection Window:** Verification.
+The buyer's countdown timer starts. They log in, verify the job history, reviews, and ratings match what you advertised, and ensure they aren't locked out.
+
+
+6. **Fund Release:** Payout.
+Once the buyer clicks "Accept" on the escrow platform (or the inspection timer runs out without a dispute), the escrow service releases the money directly to your bank account or wallet.
+
+
+---
+
+## Critical Risks to Watch Out For
+
+While escrow protects your money, selling a freelance account carries unique operational risks that a standard escrow workflow doesn't completely cover:
+
+* **Terms of Service (ToS) Violations:** Almost all major freelance platforms (Upwork, Fiverr) strictly forbid the sale or transfer of accounts. If the platform detects a sudden change in IP address, location, device, or payout details, they may instantly freeze or permanently ban the account. If this happens during the inspection period, the buyer might demand a refund, leaving you with a banned account and no money.
+* **The "Clean Break" Transfer:** When handing over the account, you must ensure your personal identification details (like tax documents, ID verifications, and personal bank accounts) are completely wiped and replaced by the buyer's before they take control.
+* **Fake Escrow Scams:** If a buyer sends you a link to a specific escrow site you've never heard of, be highly suspicious. Fraudsters frequently create fake escrow landing pages that show a dummy "Funds Secured" graphic to trick you into giving up your account info. Stick to globally recognized, licensed providers.
