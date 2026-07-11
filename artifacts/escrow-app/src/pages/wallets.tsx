@@ -263,10 +263,10 @@ export default function WalletsList() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-4 flex-shrink-0">
+                            <div className="flex items-center gap-3 flex-shrink-0">
                               {net.minDepositAmt && (
-                                <div className="hidden sm:block text-right">
-                                  <div className="text-xs text-slate-400">Min deposit</div>
+                                <div className="text-right">
+                                  <div className="text-[10px] text-slate-400">Min deposit</div>
                                   <div className="text-xs font-mono font-semibold text-slate-600">
                                     {net.minDepositAmt} {group.symbol}
                                   </div>

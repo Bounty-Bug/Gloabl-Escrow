@@ -1,5 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+/* ── Mobile & touch optimizations ────────────────────────────────── */
+/* Prevent iOS auto-zoom on form inputs (triggered when font-size < 16px) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Instant tap response — removes 300ms delay on all interactive elements */
+a, button, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
+/* Smooth momentum scrolling on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text size adjustment when rotating on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Remove tap highlight on mobile (we use focus/active styles instead) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+
 /* Clerk layer must be declared before @import 'tailwindcss' on Tailwind v4 */
 @layer theme, base, clerk, components, utilities;
 
