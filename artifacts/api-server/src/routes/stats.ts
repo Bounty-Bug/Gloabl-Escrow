@@ -1,11 +1,18 @@
 import { Router, type IRouter } from "express";
-import { sql, desc } from "drizzle-orm";
+import { sql, desc, eq } from "drizzle-orm";
 import { db, escrowsTable } from "@workspace/db";
+import { getAuth } from "@clerk/express";
 
 const router: IRouter = Router();
 
-// GET /stats
-router.get("/stats", async (_req, res): Promise<void> => {
+// GET /stats — only counts the current user's escrows
+router.get("/stats", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const [counts] = await db
     .select({
       total: sql<number>`count(*)::int`,
@@ -15,7 +22,8 @@ router.get("/stats", async (_req, res): Promise<void> => {
       disputed: sql<number>`count(*) filter (where status = 'disputed')::int`,
       cancelled: sql<number>`count(*) filter (where status = 'cancelled')::int`,
     })
-    .from(escrowsTable);
+    .from(escrowsTable)
+    .where(eq(escrowsTable.userId, userId));
 
   const volumeRows = await db
     .select({
@@ -23,11 +31,13 @@ router.get("/stats", async (_req, res): Promise<void> => {
       total: sql<string>`sum(amount)::text`,
     })
     .from(escrowsTable)
+    .where(eq(escrowsTable.userId, userId))
     .groupBy(escrowsTable.currency);
 
   const recentActivity = await db
     .select()
     .from(escrowsTable)
+    .where(eq(escrowsTable.userId, userId))
     .orderBy(desc(escrowsTable.updatedAt))
     .limit(5);
 

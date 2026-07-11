@@ -15,6 +15,7 @@ export type EscrowStatus = (typeof escrowStatusEnum)[number];
 
 export const escrowsTable = pgTable("escrows", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   buyerEmail: text("buyer_email").notNull(),

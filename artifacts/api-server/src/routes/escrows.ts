@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, or } from "drizzle-orm";
 import { db, escrowsTable } from "@workspace/db";
 import { z } from "zod";
 import {
@@ -51,33 +51,6 @@ const EscrowPatchValidator = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-/**
- * Atomically transition an escrow to a new status.
- * Returns the updated row, or null if the row was not found
- * or the current status did not match the expected value.
- * This prevents race conditions — no check-then-update pattern.
- */
-async function atomicTransition(
-  id: number,
-  fromStatuses: string[],
-  toStatus: string,
-  extra: Record<string, unknown> = {},
-) {
-  // Build an IN-list condition manually so Drizzle keeps it parameterized
-  const placeholders = fromStatuses.map((_, i) => `$${i + 3}`).join(", ");
-  const result = await db.execute(
-    sql.raw(
-      `UPDATE escrows SET status = $1, updated_at = now()${
-        Object.keys(extra)
-          .map((k, i) => `, ${toSnakeCase(k)} = $${i + fromStatuses.length + 3}`)
-          .join("")
-      } WHERE id = $2 AND status IN (${placeholders}) RETURNING *`,
-    ),
-  );
-  // Fall back to a typed Drizzle update if no extra fields (simpler path)
-  return undefined; // replaced below
-}
-
 function toSnakeCase(s: string): string {
   return s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 }
@@ -87,14 +60,14 @@ function toSnakeCase(s: string): string {
  */
 async function transition(
   id: number,
+  userId: string,
   fromStatuses: string[],
   toStatus: string,
   extra: { txHash?: string | null; notes?: string | null } = {},
 ) {
-  // Build dynamic SET clause
   const setClauses: string[] = ["status = $1", "updated_at = now()"];
-  const params: unknown[] = [toStatus, id];
-  let paramIdx = 3;
+  const params: unknown[] = [toStatus, id, userId];
+  let paramIdx = 4;
 
   if (extra.txHash !== undefined) {
     setClauses.push(`tx_hash = $${paramIdx++}`);
@@ -105,11 +78,10 @@ async function transition(
     params.push(extra.notes);
   }
 
-  // Inline the status list as $3, $4, ... params
   const statusPlaceholders = fromStatuses.map(() => `$${paramIdx++}`).join(", ");
   params.push(...fromStatuses);
 
-  const query = `UPDATE escrows SET ${setClauses.join(", ")} WHERE id = $2 AND status IN (${statusPlaceholders}) RETURNING *`;
+  const query = `UPDATE escrows SET ${setClauses.join(", ")} WHERE id = $2 AND user_id = $3 AND status IN (${statusPlaceholders}) RETURNING *`;
 
   const raw = await db.execute<typeof escrowsTable.$inferSelect>(
     sql.raw(query),
@@ -117,12 +89,11 @@ async function transition(
     params,
   );
 
-  // drizzle raw returns { rows: [...] }
   const rows = (raw as unknown as { rows: Array<typeof escrowsTable.$inferSelect> }).rows;
   return rows?.[0] ?? null;
 }
 
-// GET /escrows
+// GET /escrows — only returns the current user's escrows
 router.get("/escrows", async (req, res): Promise<void> => {
   const query = ListEscrowsQueryParams.safeParse(req.query);
   if (!query.success) {
@@ -136,22 +107,40 @@ router.get("/escrows", async (req, res): Promise<void> => {
     return;
   }
 
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const userFilter = eq(escrowsTable.userId, userId);
+
   const escrows = query.data.status
     ? await db
         .select()
         .from(escrowsTable)
-        .where(eq(escrowsTable.status, query.data.status))
+        .where(and(userFilter, eq(escrowsTable.status, query.data.status)))
         .orderBy(desc(escrowsTable.createdAt))
-    : await db.select().from(escrowsTable).orderBy(desc(escrowsTable.createdAt));
+    : await db
+        .select()
+        .from(escrowsTable)
+        .where(userFilter)
+        .orderBy(desc(escrowsTable.createdAt));
 
   res.json(escrows);
 });
 
-// POST /escrows
+// POST /escrows — stores userId on creation
 router.post("/escrows", async (req, res): Promise<void> => {
   const parsed = EscrowCreateValidator.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
@@ -185,6 +174,7 @@ router.post("/escrows", async (req, res): Promise<void> => {
   const [escrow] = await db
     .insert(escrowsTable)
     .values({
+      userId,
       title,
       description: description ?? null,
       buyerEmail,
@@ -197,18 +187,15 @@ router.post("/escrows", async (req, res): Promise<void> => {
     })
     .returning();
 
-  // Look up initiator's email from Clerk so we can send differentiated emails
+  // Look up initiator's email from Clerk for differentiated emails
   ;(async () => {
     try {
-      const { userId } = getAuth(req);
       let initiatorEmail: string | null = null;
-      if (userId) {
-        const user = await clerkClient.users.getUser(userId);
-        initiatorEmail =
-          user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress ??
-          user.emailAddresses[0]?.emailAddress ??
-          null;
-      }
+      const user = await clerkClient.users.getUser(userId);
+      initiatorEmail =
+        user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress ??
+        user.emailAddresses[0]?.emailAddress ??
+        null;
 
       if (initiatorEmail) {
         const isBuyer   = initiatorEmail.toLowerCase() === buyerEmail.toLowerCase();
@@ -221,7 +208,6 @@ router.post("/escrows", async (req, res): Promise<void> => {
           await sendEscrowCreatedCounterparty(escrow, counterpartyEmail, counterpartyRole);
         }
       } else {
-        // Fallback: send invitation-style email to both if we can't identify initiator
         await sendEscrowCreatedCounterparty(escrow, buyerEmail, "buyer");
         await sendEscrowCreatedCounterparty(escrow, sellerEmail, "seller");
       }
@@ -233,17 +219,25 @@ router.post("/escrows", async (req, res): Promise<void> => {
   res.status(201).json(escrow);
 });
 
-// GET /escrows/:id
+// GET /escrows/:id — only accessible by owner
 router.get("/escrows/:id", async (req, res): Promise<void> => {
   const params = GetEscrowParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
+
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const [escrow] = await db
     .select()
     .from(escrowsTable)
-    .where(eq(escrowsTable.id, params.data.id));
+    .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.userId, userId)));
+
   if (!escrow) {
     res.status(404).json({ error: "Escrow not found" });
     return;
@@ -251,7 +245,7 @@ router.get("/escrows/:id", async (req, res): Promise<void> => {
   res.json(escrow);
 });
 
-// PATCH /escrows/:id
+// PATCH /escrows/:id — only owner can update
 router.patch("/escrows/:id", async (req, res): Promise<void> => {
   const params = UpdateEscrowParams.safeParse(req.params);
   if (!params.success) {
@@ -261,6 +255,12 @@ router.patch("/escrows/:id", async (req, res): Promise<void> => {
   const parsed = EscrowPatchValidator.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
@@ -277,7 +277,7 @@ router.patch("/escrows/:id", async (req, res): Promise<void> => {
   const [escrow] = await db
     .update(escrowsTable)
     .set(updates)
-    .where(eq(escrowsTable.id, params.data.id))
+    .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.userId, userId)))
     .returning();
 
   if (!escrow) {
@@ -287,7 +287,7 @@ router.patch("/escrows/:id", async (req, res): Promise<void> => {
   res.json(escrow);
 });
 
-// POST /escrows/:id/fund
+// POST /escrows/:id/fund — only owner
 router.post("/escrows/:id/fund", async (req, res): Promise<void> => {
   const params = FundEscrowParams.safeParse(req.params);
   if (!params.success) {
@@ -300,13 +300,17 @@ router.post("/escrows/:id/fund", async (req, res): Promise<void> => {
     return;
   }
 
-  // Validate txHash format (basic hex string check)
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   if (parsed.data.txHash && !/^[0-9a-fA-F]{40,100}$/.test(parsed.data.txHash.replace(/^0x/, ""))) {
     res.status(400).json({ error: "Invalid transaction hash format" });
     return;
   }
 
-  // Atomic conditional update — only applies if current status is 'pending'
   const [escrow] = await db
     .update(escrowsTable)
     .set({
@@ -314,15 +318,20 @@ router.post("/escrows/:id/fund", async (req, res): Promise<void> => {
       txHash: parsed.data.txHash,
       notes: parsed.data.notes ?? undefined,
     })
-    .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.status, "pending")))
+    .where(
+      and(
+        eq(escrowsTable.id, params.data.id),
+        eq(escrowsTable.userId, userId),
+        eq(escrowsTable.status, "pending"),
+      ),
+    )
     .returning();
 
   if (!escrow) {
-    // Check if it's a 404 or a state conflict
     const [existing] = await db
       .select({ id: escrowsTable.id, status: escrowsTable.status })
       .from(escrowsTable)
-      .where(eq(escrowsTable.id, params.data.id));
+      .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.userId, userId)));
     if (!existing) {
       res.status(404).json({ error: "Escrow not found" });
     } else {
@@ -335,7 +344,7 @@ router.post("/escrows/:id/fund", async (req, res): Promise<void> => {
   res.json(escrow);
 });
 
-// POST /escrows/:id/release
+// POST /escrows/:id/release — only owner
 router.post("/escrows/:id/release", async (req, res): Promise<void> => {
   const params = ReleaseEscrowParams.safeParse(req.params);
   if (!params.success) {
@@ -348,17 +357,29 @@ router.post("/escrows/:id/release", async (req, res): Promise<void> => {
     return;
   }
 
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const [escrow] = await db
     .update(escrowsTable)
     .set({ status: "released", notes: parsed.data.notes ?? undefined })
-    .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.status, "funded")))
+    .where(
+      and(
+        eq(escrowsTable.id, params.data.id),
+        eq(escrowsTable.userId, userId),
+        eq(escrowsTable.status, "funded"),
+      ),
+    )
     .returning();
 
   if (!escrow) {
     const [existing] = await db
       .select({ id: escrowsTable.id, status: escrowsTable.status })
       .from(escrowsTable)
-      .where(eq(escrowsTable.id, params.data.id));
+      .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.userId, userId)));
     if (!existing) {
       res.status(404).json({ error: "Escrow not found" });
     } else {
@@ -371,7 +392,7 @@ router.post("/escrows/:id/release", async (req, res): Promise<void> => {
   res.json(escrow);
 });
 
-// POST /escrows/:id/dispute
+// POST /escrows/:id/dispute — only owner
 router.post("/escrows/:id/dispute", async (req, res): Promise<void> => {
   const params = DisputeEscrowParams.safeParse(req.params);
   if (!params.success) {
@@ -384,13 +405,19 @@ router.post("/escrows/:id/dispute", async (req, res): Promise<void> => {
     return;
   }
 
-  // Can dispute from pending or funded
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const [escrow] = await db
     .update(escrowsTable)
     .set({ status: "disputed", notes: parsed.data.notes ?? undefined })
     .where(
       and(
         eq(escrowsTable.id, params.data.id),
+        eq(escrowsTable.userId, userId),
         sql`status IN ('pending', 'funded')`,
       ),
     )
@@ -400,7 +427,7 @@ router.post("/escrows/:id/dispute", async (req, res): Promise<void> => {
     const [existing] = await db
       .select({ id: escrowsTable.id, status: escrowsTable.status })
       .from(escrowsTable)
-      .where(eq(escrowsTable.id, params.data.id));
+      .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.userId, userId)));
     if (!existing) {
       res.status(404).json({ error: "Escrow not found" });
     } else {
@@ -413,7 +440,7 @@ router.post("/escrows/:id/dispute", async (req, res): Promise<void> => {
   res.json(escrow);
 });
 
-// POST /escrows/:id/cancel — only allowed from 'pending' (not funded, protecting buyer)
+// POST /escrows/:id/cancel — only owner, only from 'pending'
 router.post("/escrows/:id/cancel", async (req, res): Promise<void> => {
   const params = CancelEscrowParams.safeParse(req.params);
   if (!params.success) {
@@ -426,19 +453,29 @@ router.post("/escrows/:id/cancel", async (req, res): Promise<void> => {
     return;
   }
 
-  // Only cancel from 'pending' — once funded, buyer has sent crypto; cancellation
-  // must go through dispute resolution to protect both parties.
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const [escrow] = await db
     .update(escrowsTable)
     .set({ status: "cancelled", notes: parsed.data.notes ?? undefined })
-    .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.status, "pending")))
+    .where(
+      and(
+        eq(escrowsTable.id, params.data.id),
+        eq(escrowsTable.userId, userId),
+        eq(escrowsTable.status, "pending"),
+      ),
+    )
     .returning();
 
   if (!escrow) {
     const [existing] = await db
       .select({ id: escrowsTable.id, status: escrowsTable.status })
       .from(escrowsTable)
-      .where(eq(escrowsTable.id, params.data.id));
+      .where(and(eq(escrowsTable.id, params.data.id), eq(escrowsTable.userId, userId)));
     if (!existing) {
       res.status(404).json({ error: "Escrow not found" });
     } else if (existing.status === "funded") {
