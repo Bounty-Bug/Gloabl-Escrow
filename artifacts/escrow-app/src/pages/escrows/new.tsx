@@ -175,7 +175,13 @@ export default function NewEscrow() {
                     <FormItem>
                       <FormLabel className="text-slate-700 font-medium">Amount</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.00000001" min="0" placeholder="0.00" className="bg-white border-slate-200" {...field} />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          className="bg-white border-slate-200 font-mono"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

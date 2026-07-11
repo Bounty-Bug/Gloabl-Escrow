@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 import { Route, Switch, Redirect, Router as WouterRouter, useLocation } from "wouter";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
@@ -91,6 +92,22 @@ const clerkAppearance = {
     main: "px-8 py-6",
   },
 };
+
+// Attaches Clerk session tokens to every API request as a Bearer header.
+// This ensures the Express clerkMiddleware can verify the session even
+// when running cross-origin (e.g. production deployments on different domains).
+function ClerkApiTokenSync() {
+  const { getToken, isSignedIn } = useAuth();
+  useEffect(() => {
+    if (isSignedIn) {
+      setAuthTokenGetter(() => getToken());
+    } else {
+      setAuthTokenGetter(null);
+    }
+    return () => { setAuthTokenGetter(null); };
+  }, [getToken, isSignedIn]);
+  return null;
+}
 
 // Syncs QueryClient cache when the signed-in user changes.
 function ClerkQueryClientCacheInvalidator() {
@@ -193,6 +210,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <ClerkApiTokenSync />
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
           <Switch>
