@@ -100,7 +100,7 @@ function DepositAddressDialog({ currency, chain }: { currency: string; chain: st
 
 // ─── Coin Logo ────────────────────────────────────────────────────────────────
 
-function CoinLogo({ src, symbol, size = "md" }: { src: string; symbol: string; size?: "sm" | "md" }) {
+function CoinLogo({ src, symbol, size = "md" }: { src: string | null | undefined; symbol: string; size?: "sm" | "md" }) {
   const [err, setErr] = React.useState(false)
   const dim = size === "sm" ? "w-7 h-7 text-xs" : "w-10 h-10 text-sm"
   if (!src || err) {
@@ -126,7 +126,7 @@ type NetworkEntry = { chain: string; minDepositAmt: string }
 type CurrencyGroup = {
   symbol: string
   name: string
-  logoLink: string
+  logoLink: string | null | undefined
   networks: NetworkEntry[]
 }
 
