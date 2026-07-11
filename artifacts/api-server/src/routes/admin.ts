@@ -2,6 +2,13 @@ import { Router, type IRouter } from "express";
 import { eq, sql, desc, ilike, or } from "drizzle-orm";
 import { db, escrowsTable } from "@workspace/db";
 import type { Request, Response, NextFunction } from "express";
+import {
+  sendEscrowFunded,
+  sendEscrowReleased,
+  sendEscrowDisputed,
+  sendEscrowCancelled,
+} from "../lib/mailer";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -131,6 +138,18 @@ router.patch("/admin/escrows/:id/status", async (req, res): Promise<void> => {
 
   if (!escrow) { res.status(404).json({ error: "Escrow not found" }); return; }
   res.json(escrow);
+
+  // Send notification emails to both parties — best-effort, after response
+  ;(async () => {
+    try {
+      if (status === "funded") await sendEscrowFunded(escrow);
+      else if (status === "released") await sendEscrowReleased(escrow);
+      else if (status === "disputed") await sendEscrowDisputed(escrow);
+      else if (status === "cancelled") await sendEscrowCancelled(escrow);
+    } catch (err) {
+      logger.error({ err }, "Admin status change email error");
+    }
+  })();
 });
 
 // ── PATCH /admin/escrows/:id ─────────────────────────────────────────────────
