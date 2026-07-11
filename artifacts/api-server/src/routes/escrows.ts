@@ -15,15 +15,19 @@ import {
   CancelEscrowParams,
   CancelEscrowBody,
 } from "@workspace/api-zod";
+import { getAuth, createClerkClient } from "@clerk/express";
 import { getDepositAddress } from "../lib/okx";
 import {
-  sendEscrowCreated,
+  sendEscrowCreatedInitiator,
+  sendEscrowCreatedCounterparty,
   sendEscrowFunded,
   sendEscrowReleased,
   sendEscrowDisputed,
   sendEscrowCancelled,
 } from "../lib/mailer";
 import { desc } from "drizzle-orm";
+
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 const router: IRouter = Router();
 
@@ -193,7 +197,39 @@ router.post("/escrows", async (req, res): Promise<void> => {
     })
     .returning();
 
-  sendEscrowCreated(escrow).catch((err) => req.log.error({ err }, "Email error"));
+  // Look up initiator's email from Clerk so we can send differentiated emails
+  ;(async () => {
+    try {
+      const { userId } = getAuth(req);
+      let initiatorEmail: string | null = null;
+      if (userId) {
+        const user = await clerkClient.users.getUser(userId);
+        initiatorEmail =
+          user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress ??
+          user.emailAddresses[0]?.emailAddress ??
+          null;
+      }
+
+      if (initiatorEmail) {
+        const isBuyer   = initiatorEmail.toLowerCase() === buyerEmail.toLowerCase();
+        const isSeller  = initiatorEmail.toLowerCase() === sellerEmail.toLowerCase();
+        const counterpartyEmail = isBuyer ? sellerEmail : isSeller ? buyerEmail : null;
+        const counterpartyRole  = isBuyer ? "seller" : "buyer";
+
+        await sendEscrowCreatedInitiator(escrow, initiatorEmail);
+        if (counterpartyEmail) {
+          await sendEscrowCreatedCounterparty(escrow, counterpartyEmail, counterpartyRole);
+        }
+      } else {
+        // Fallback: send invitation-style email to both if we can't identify initiator
+        await sendEscrowCreatedCounterparty(escrow, buyerEmail, "buyer");
+        await sendEscrowCreatedCounterparty(escrow, sellerEmail, "seller");
+      }
+    } catch (err) {
+      req.log.error({ err }, "Email error on escrow created");
+    }
+  })();
+
   res.status(201).json(escrow);
 });
 

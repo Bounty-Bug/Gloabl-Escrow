@@ -166,7 +166,7 @@ export default function NewEscrow() {
                   <Globe className="w-4 h-4 text-blue-600" /> Payment Details
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-400 mt-1">
-                  A verified deposit address will be generated from OKX for the selected network.
+                  A verified deposit address will be generated for the selected network.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">

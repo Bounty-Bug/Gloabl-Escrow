@@ -53,7 +53,7 @@ const FEATURES = [
     icon: <Globe className="w-6 h-6 text-emerald-600" />,
     bg: "bg-emerald-50",
     title: "Global Reach",
-    description: "Accept Bitcoin, Ethereum, USDT and more across 50+ networks worldwide with real-time OKX pricing.",
+    description: "Accept Bitcoin, Ethereum, USDT and more across 50+ networks worldwide — all major chains supported.",
   },
   {
     icon: <Zap className="w-6 h-6 text-amber-600" />,
@@ -213,7 +213,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-slate-400 font-medium">
             <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500" /> 256-bit encryption</span>
-            <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500" /> OKX-verified addresses</span>
+            <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500" /> Verified deposit addresses</span>
             <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500" /> Email notifications</span>
             <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500" /> Dispute resolution</span>
             <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500" /> No hidden fees</span>
@@ -284,7 +284,7 @@ export default function Landing() {
       <section className="py-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-xl font-bold text-slate-900 mb-2">Supported Cryptocurrencies</h2>
-          <p className="text-sm text-slate-500 mb-8">All major assets available across multiple networks via OKX</p>
+          <p className="text-sm text-slate-500 mb-8">All major assets available across multiple networks</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {CURRENCIES.map(c => (
               <div key={c} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-sm font-semibold text-slate-700 shadow-sm hover:border-blue-200 hover:text-blue-700 transition-colors">
@@ -314,7 +314,7 @@ export default function Landing() {
                     <div className="text-5xl font-extrabold mb-2">256</div>
                     <div className="text-blue-200 text-sm font-medium uppercase tracking-widest">Bit Encryption</div>
                     <div className="mt-6 grid grid-cols-2 gap-3 text-left">
-                      {["OKX API", "HMAC Auth", "SSL/TLS", "On-chain"].map(t => (
+                      {["Signed API", "HMAC Auth", "SSL/TLS", "On-chain"].map(t => (
                         <div key={t} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 text-xs font-medium text-white">
                           <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> {t}
                         </div>
@@ -339,13 +339,13 @@ export default function Landing() {
                 Your Funds Are Protected at Every Step
               </h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                We partner with OKX to verify every deposit address before an escrow is created. 
-                Wallet credentials are never stored in our system — only signed API calls are used, 
-                and every transaction can be verified independently on-chain.
+                Every deposit address is verified via signed API calls before an escrow is created.
+                Wallet credentials are never stored in our system, and every transaction can be
+                verified independently on-chain.
               </p>
               <div className="space-y-4">
                 {[
-                  { icon: <Shield className="w-5 h-5 text-blue-600" />, title: "No fake addresses", desc: "Deposit addresses come directly from OKX API — never hardcoded or mocked." },
+                  { icon: <Shield className="w-5 h-5 text-blue-600" />, title: "Verified addresses", desc: "Deposit addresses are verified via signed API calls before every escrow is created." },
                   { icon: <RefreshCw className="w-5 h-5 text-blue-600" />, title: "Atomic state transitions", desc: "Escrow status changes are race-condition proof using atomic database locks." },
                   { icon: <Clock className="w-5 h-5 text-blue-600" />, title: "Dispute protection", desc: "Once funded, only dispute resolution can unblock funds — never a simple cancel." },
                 ].map(item => (
