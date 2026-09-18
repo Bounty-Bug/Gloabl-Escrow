@@ -19,6 +19,7 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
+import { formatAmount } from "@/lib/utils"
 import {
   Copy, Check, ShieldCheck, Clock, Activity, AlertCircle,
   XCircle, ArrowLeft, User, Calendar, FileText, Hash,
@@ -297,7 +298,7 @@ export default function EscrowDetail() {
                     <DialogHeader>
                       <DialogTitle>Confirm Funding</DialogTitle>
                       <DialogDescription>
-                        Provide the transaction hash to confirm {escrow.amount} {escrow.currency} has been sent to escrow.
+                         Provide the transaction hash to confirm {formatAmount(escrow.amount)} {escrow.currency} has been sent to escrow.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-3">
@@ -358,7 +359,7 @@ export default function EscrowDetail() {
                     <DialogHeader>
                       <DialogTitle>Confirm Account &amp; Release Funds</DialogTitle>
                       <DialogDescription>
-                        By confirming, you verify that you have full access to the account and all details match what was advertised. This releases {escrow.amount} {escrow.currency} to the seller and <strong>cannot be undone</strong>.
+                         By confirming, you verify that you have full access to the account and all details match what was advertised. This releases {formatAmount(escrow.amount)} {escrow.currency} to the seller and <strong>cannot be undone</strong>.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-3">
@@ -498,7 +499,7 @@ export default function EscrowDetail() {
                 <ArrowDownToLine className="w-4 h-4" /> Withdraw Your Funds
               </CardTitle>
               <CardDescription className="text-xs text-slate-400 mt-1">
-                Funds have been released. Provide your wallet address to receive {escrow.amount} {escrow.currency}.
+                 Funds have been released. Provide your wallet address to receive {formatAmount(escrow.amount)} {escrow.currency}.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
@@ -522,7 +523,7 @@ export default function EscrowDetail() {
                       <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Amount due to you</span>
                     </div>
                     <div className="text-2xl font-bold font-mono text-emerald-800">
-                      {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                      {formatAmount(escrow.amount)}
                       <span className="text-base font-semibold text-emerald-600 ml-2">{escrow.currency}</span>
                     </div>
                     <div className="text-xs text-emerald-600 mt-1">Network: {escrow.network}</div>
@@ -722,7 +723,7 @@ export default function EscrowDetail() {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-4xl font-extrabold font-mono">
-                    {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatAmount(escrow.amount)}
                   </span>
                   <span className="text-xl font-semibold opacity-75">{escrow.currency}</span>
                 </div>
@@ -746,7 +747,7 @@ export default function EscrowDetail() {
                 <CardHeader className="px-5 py-4 border-b border-slate-100">
                   <CardTitle className="text-sm font-semibold text-slate-700">Deposit Address</CardTitle>
                   <CardDescription className="text-xs text-slate-400 mt-1">
-                    Send exactly {escrow.amount} {escrow.currency} on {escrow.network}
+                     Send exactly {formatAmount(escrow.amount)} {escrow.currency} on {escrow.network}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-5 space-y-3">

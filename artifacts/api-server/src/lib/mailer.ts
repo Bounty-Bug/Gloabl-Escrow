@@ -38,9 +38,7 @@ function statusLabel(status: string): string {
 function formatAmount(amount: string): string {
   const n = parseFloat(amount);
   if (isNaN(n)) return amount;
-  if (n >= 1) return n.toFixed(2);
-  if (n >= 0.001) return n.toFixed(3);
-  return n.toFixed(6);
+  return n.toFixed(2);
 }
 
 function baseTemplate(title: string, body: string): string {

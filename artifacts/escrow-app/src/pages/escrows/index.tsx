@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Link } from "wouter"
 import { Search, Eye, Clock, Activity, ShieldCheck, AlertCircle, CheckCircle2, Plus } from "lucide-react"
+import { formatAmount } from "@/lib/utils"
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ElementType; badge: any; dot: string }> = {
   completed: { color: "text-emerald-600", icon: CheckCircle2, badge: "success",     dot: "bg-emerald-500" },
@@ -88,7 +89,7 @@ export default function EscrowsList() {
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-slate-400 truncate max-w-[55%]">{escrow.buyerEmail}</div>
                     <div className="font-mono text-sm font-bold text-slate-900">
-                      {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {escrow.currency}
+                      {formatAmount(escrow.amount)} {escrow.currency}
                     </div>
                   </div>
                   <div className="text-xs text-slate-300 mt-1">#{escrow.id}</div>
@@ -143,7 +144,7 @@ export default function EscrowsList() {
                     <div className="truncate">↓ {escrow.sellerEmail}</div>
                   </div>
                   <div className="font-mono text-sm font-semibold text-slate-900">
-                    {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatAmount(escrow.amount)}
                     <span className="text-slate-400 font-normal ml-1">{escrow.currency}</span>
                   </div>
                   <div>

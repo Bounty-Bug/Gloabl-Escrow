@@ -1,4 +1,5 @@
 import * as React from "react"
+import { formatAmount } from "@/lib/utils"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -237,7 +238,7 @@ function EscrowDrawer({ escrow, onClose }: { escrow: Escrow; onClose: () => void
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Amount</p>
-              <p className="font-mono font-bold text-slate-900">{parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {escrow.currency}</p>
+              <p className="font-mono font-bold text-slate-900">{formatAmount(escrow.amount)} {escrow.currency}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Network</p>
@@ -453,7 +454,7 @@ export default function AdminPage() {
                 {stats.volumeByCurrency.map(v => (
                   <div key={v.currency} className="bg-slate-800 rounded-xl px-4 py-2 flex items-center gap-3">
                     <span className="font-bold text-blue-400 text-sm">{v.currency}</span>
-                    <span className="font-mono text-white text-sm">{parseFloat(v.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="font-mono text-white text-sm">{formatAmount(v.total)}</span>
                     <span className="text-slate-500 text-xs">({v.count} escrows)</span>
                   </div>
                 ))}
@@ -524,7 +525,7 @@ export default function AdminPage() {
                 <div className="text-slate-400 text-xs truncate">{escrow.buyerEmail}</div>
                 <div className="text-slate-400 text-xs truncate">{escrow.sellerEmail}</div>
                 <div className="font-mono text-white text-xs">
-                  {parseFloat(escrow.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatAmount(escrow.amount)}
                   <span className="text-slate-500 ml-1">{escrow.currency}</span>
                 </div>
                 <div><StatusBadge status={escrow.status} /></div>
