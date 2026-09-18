@@ -1,16 +1,20 @@
 import nodemailer from "nodemailer";
+import { ReplitConnectors } from "@replit/connectors-sdk";
 import { logger } from "./logger";
 import type { Escrow } from "@workspace/db";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+const connectors = new ReplitConnectors();
+let gmailSenderAddress: string | null | undefined;
 
-const FROM = `Escrow Global <${process.env.GMAIL_USER}>`;
+function getSmtpTransporter() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+}
 
 /** Derive the public frontend URL from environment */
 function getAppUrl(): string {
@@ -113,16 +117,88 @@ function escrowFieldGrid(escrow: Escrow): string {
   return `<div class="field-grid">${rowsHtml}</div>`;
 }
 
-async function sendMail(to: string[], subject: string, html: string): Promise<void> {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    logger.warn("Gmail credentials not set — skipping email notification");
-    return;
+function encodeHeader(value: string): string {
+  if (/^[\x00-\x7F]*$/.test(value)) return value;
+  return `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
+}
+
+async function getGmailSenderAddress(): Promise<string> {
+  if (gmailSenderAddress) return gmailSenderAddress;
+
+  const response = await connectors.proxy(
+    "google-mail",
+    "/gmail/v1/users/me/profile",
+    { method: "GET" },
+  );
+  if (!response.ok) {
+    throw new Error(`Gmail profile lookup failed with HTTP ${response.status}`);
   }
+
+  const profile = (await response.json()) as { emailAddress?: string };
+  if (!profile.emailAddress) {
+    throw new Error("Gmail profile did not return a sender address");
+  }
+
+  gmailSenderAddress = profile.emailAddress;
+  return profile.emailAddress;
+}
+
+async function sendViaGmailConnector(
+  to: string[],
+  subject: string,
+  html: string,
+): Promise<void> {
+  const sender = await getGmailSenderAddress();
+  const rawMessage = [
+    `From: Escrow Global <${sender}>`,
+    `To: ${to.join(", ")}`,
+    `Subject: ${encodeHeader(subject)}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    html,
+  ].join("\r\n");
+
+  const response = await connectors.proxy(
+    "google-mail",
+    "/gmail/v1/users/me/messages/send",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        raw: Buffer.from(rawMessage, "utf8").toString("base64url"),
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const details = (await response.text()).slice(0, 500);
+    throw new Error(
+      `Gmail send failed with HTTP ${response.status}${details ? `: ${details}` : ""}`,
+    );
+  }
+}
+
+async function sendMail(to: string[], subject: string, html: string): Promise<void> {
   try {
-    await transporter.sendMail({ from: FROM, to: to.join(", "), subject, html });
-    logger.info({ to, subject }, "Email sent");
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+      const transporter = getSmtpTransporter();
+      await transporter.sendMail({
+        from: `Escrow Global <${process.env.GMAIL_USER}>`,
+        to: to.join(", "),
+        subject,
+        html,
+      });
+      logger.info({ to, subject, provider: "smtp" }, "Email sent");
+      return;
+    }
+
+    await sendViaGmailConnector(to, subject, html);
+    logger.info({ to, subject, provider: "gmail-connector" }, "Email sent");
   } catch (err) {
     logger.error({ err, to, subject }, "Failed to send email");
+    throw err;
   }
 }
 

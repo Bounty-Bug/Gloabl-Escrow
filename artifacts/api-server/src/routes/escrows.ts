@@ -170,18 +170,28 @@ router.post("/escrows", async (req, res): Promise<void> => {
         null;
 
       if (initiatorEmail) {
-        const isBuyer  = initiatorEmail.toLowerCase() === buyerEmail.toLowerCase();
+        const isBuyer = initiatorEmail.toLowerCase() === buyerEmail.toLowerCase();
         const isSeller = initiatorEmail.toLowerCase() === sellerEmail.toLowerCase();
-        const counterpartyEmail = isBuyer ? sellerEmail : isSeller ? buyerEmail : null;
-        const counterpartyRole  = isBuyer ? "seller" : "buyer";
 
         await sendEscrowCreatedInitiator(escrow, initiatorEmail);
-        if (counterpartyEmail) {
-          await sendEscrowCreatedCounterparty(escrow, counterpartyEmail, counterpartyRole);
+
+        const counterpartyNotifications: Promise<void>[] = [];
+        if (!isBuyer) {
+          counterpartyNotifications.push(
+            sendEscrowCreatedCounterparty(escrow, buyerEmail, "buyer"),
+          );
         }
+        if (!isSeller) {
+          counterpartyNotifications.push(
+            sendEscrowCreatedCounterparty(escrow, sellerEmail, "seller"),
+          );
+        }
+        await Promise.all(counterpartyNotifications);
       } else {
-        await sendEscrowCreatedCounterparty(escrow, buyerEmail, "buyer");
-        await sendEscrowCreatedCounterparty(escrow, sellerEmail, "seller");
+        await Promise.all([
+          sendEscrowCreatedCounterparty(escrow, buyerEmail, "buyer"),
+          sendEscrowCreatedCounterparty(escrow, sellerEmail, "seller"),
+        ]);
       }
     } catch (err) {
       req.log.error({ err }, "Email error on escrow created");
