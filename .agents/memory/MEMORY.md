@@ -1,0 +1,1 @@
+- [OKX outbound allowlisting](okx-egress.md) — Vercel default Functions egress is dynamic; production OKX keys need Static IPs or fixed-egress API hosting.
