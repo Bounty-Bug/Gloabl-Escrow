@@ -5,14 +5,10 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-// Handle empty strings (e.g., PORT="") passed by environments like Vercel
-const rawPort = process.env.PORT && process.env.PORT.trim() !== '' 
-  ? process.env.PORT 
-  : '5173';
-
+// Vercel does not provide PORT during a static build. Replit supplies it for dev.
+const rawPort = process.env.PORT?.trim() || '5173';
 const parsedPort = Number(rawPort);
-const port = (!Number.isNaN(parsedPort) && parsedPort > 0) ? parsedPort : 5173;
-
+const port = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 5173;
 const basePath = process.env.BASE_PATH ?? '/';
 
 export default defineConfig({
